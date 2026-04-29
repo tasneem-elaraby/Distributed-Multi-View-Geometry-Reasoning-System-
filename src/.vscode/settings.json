@@ -1,0 +1,31 @@
+{
+    "ROS2.distro": "jazzy",
+    "python.autoComplete.extraPaths": [
+        "/home/tasneem/task5_ws/install/geometry_vision/lib/python3.12/site-packages",
+        "/home/tasneem/task5_ws/install/surveillance_interfaces/lib/python3.12/site-packages",
+        "/home/tasneem/visual_nav_ws/install/visual_navigation_interfaces/lib/python3.12/site-packages",
+        "/home/tasneem/visual_nav_ws/install/visual_navigation/lib/python3.12/site-packages",
+        "/home/tasneem/smart_exam_system/install/exam_proctoring/lib/python3.12/site-packages",
+        "/home/tasneem/smart_exam_system/install/alert_interfaces/lib/python3.12/site-packages",
+        "/home/tasneem/timmy_ws/install/my_py_pkg/lib/python3.12/site-packages",
+        "/home/tasneem/timmy_ws/install/my_robot_interfaces/lib/python3.12/site-packages",
+        "/home/tasneem/timmy_ws/install/grid_fleet/lib/python3.12/site-packages",
+        "/home/tasneem/timmy_ws/install/grid_fleet_interfaces/lib/python3.12/site-packages",
+        "/opt/ros/jazzy/lib/python3.12/site-packages",
+        "/home/tasneem/Depth-Anything-V2"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/tasneem/task5_ws/install/geometry_vision/lib/python3.12/site-packages",
+        "/home/tasneem/task5_ws/install/surveillance_interfaces/lib/python3.12/site-packages",
+        "/home/tasneem/visual_nav_ws/install/visual_navigation_interfaces/lib/python3.12/site-packages",
+        "/home/tasneem/visual_nav_ws/install/visual_navigation/lib/python3.12/site-packages",
+        "/home/tasneem/smart_exam_system/install/exam_proctoring/lib/python3.12/site-packages",
+        "/home/tasneem/smart_exam_system/install/alert_interfaces/lib/python3.12/site-packages",
+        "/home/tasneem/timmy_ws/install/my_py_pkg/lib/python3.12/site-packages",
+        "/home/tasneem/timmy_ws/install/my_robot_interfaces/lib/python3.12/site-packages",
+        "/home/tasneem/timmy_ws/install/grid_fleet/lib/python3.12/site-packages",
+        "/home/tasneem/timmy_ws/install/grid_fleet_interfaces/lib/python3.12/site-packages",
+        "/opt/ros/jazzy/lib/python3.12/site-packages",
+        "/home/tasneem/Depth-Anything-V2"
+    ]
+}

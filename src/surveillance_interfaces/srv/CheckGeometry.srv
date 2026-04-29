@@ -1,0 +1,9 @@
+float32[] query_x
+float32[] query_y
+float32[] train_x
+float32[] train_y
+int32 count
+---
+int32 inlier_count
+float32 inlier_ratio
+bool is_consistent

@@ -1,0 +1,25 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${workspaceFolder}/.vscode/browse.vc.db",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/tasneem/task5_ws/install/surveillance_interfaces/include/**",
+        "/home/tasneem/visual_nav_ws/install/visual_navigation_interfaces/include/**",
+        "/home/tasneem/smart_exam_system/install/alert_interfaces/include/**",
+        "/home/tasneem/timmy_ws/install/my_robot_interfaces/include/**",
+        "/home/tasneem/timmy_ws/install/grid_fleet_interfaces/include/**",
+        "/opt/ros/jazzy/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ros2",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++17"
+    }
+  ],
+  "version": 4
+}

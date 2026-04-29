@@ -1,0 +1,8 @@
+string state
+int32 inlier_count
+float32 inlier_ratio
+---
+bool accepted
+string message
+---
+string current_status

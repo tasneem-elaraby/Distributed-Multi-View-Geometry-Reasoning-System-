@@ -1,0 +1,10 @@
+build/
+install/
+log/
+**/__pycache__/
+.vscode/
+build/
+install/
+log/
+*.db
+*.ipch
