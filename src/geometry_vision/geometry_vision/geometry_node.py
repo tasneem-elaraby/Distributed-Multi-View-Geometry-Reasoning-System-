@@ -4,8 +4,8 @@ from rclpy.node import Node
 import numpy as np
 import cv2
 
-from surveillance_interfaces.msg import MatchArray, GeometricInliers
-from surveillance_interfaces.srv import CheckGeometry
+from geometry_interfaces.msg import MatchArray, GeometricInliers
+from geometry_interfaces.srv import CheckGeometry
 
 
 class GeometricConsistencyNode(Node):

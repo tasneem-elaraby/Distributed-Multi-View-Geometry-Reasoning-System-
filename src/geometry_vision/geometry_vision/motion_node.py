@@ -5,7 +5,7 @@ from rclpy.node import Node
 import numpy as np
 import cv2
 
-from surveillance_interfaces.msg import GeometricInliers, CameraMotion
+from geometry_interfaces.msg import GeometricInliers, CameraMotion
 
 
 class MotionEstimationNode(Node):

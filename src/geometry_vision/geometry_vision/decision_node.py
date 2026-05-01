@@ -4,8 +4,8 @@ from rclpy.node import Node
 from rclpy.action import ActionServer, CancelResponse, GoalResponse
 from std_msgs.msg import String
 
-from surveillance_interfaces.msg import CameraMotion, GeometricInliers
-from surveillance_interfaces.action import ReportAction
+from geometry_interfaces.msg import CameraMotion, GeometricInliers
+from geometry_interfaces.action import ReportAction
 
 
 class ReliabilityDecisionNode(Node):
