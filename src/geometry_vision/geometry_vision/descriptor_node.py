@@ -6,7 +6,7 @@ from cv_bridge import CvBridge
 import cv2
 import numpy as np
 
-from surveillance_interfaces.msg import KeypointArray, DescriptorArray
+from geometry_interfaces.msg import KeypointArray, DescriptorArray
 
 
 class DescriptorExtractionNode(Node):
