@@ -1,10 +1,8 @@
 
-
 import rclpy
 from rclpy.node import Node
 import numpy as np
 import cv2
-
 from geometry_interfaces.msg import DescriptorArray, MatchArray
 
 
