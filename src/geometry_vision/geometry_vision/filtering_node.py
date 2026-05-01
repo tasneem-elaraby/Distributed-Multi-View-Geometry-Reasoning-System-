@@ -1,10 +1,7 @@
 
-
 import rclpy
 from rclpy.node import Node
-
 from geometry_interfaces.msg import MatchArray
-
 
 class MatchFilteringNode(Node):
 
