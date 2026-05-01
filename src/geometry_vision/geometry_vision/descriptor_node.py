@@ -5,9 +5,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 import cv2
 import numpy as np
-
 from geometry_interfaces.msg import KeypointArray, DescriptorArray
-
 
 class DescriptorExtractionNode(Node):
 
@@ -17,7 +15,7 @@ class DescriptorExtractionNode(Node):
         self.declare_parameter('descriptor_type', 'ORB')
         desc_type = self.get_parameter('descriptor_type').value
 
-        # ORB can both detect and compute; here we use only its compute()
+        # ORB can both detect and compute
         self.extractor = cv2.ORB_create()
         self.bridge    = CvBridge()
 
