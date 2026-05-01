@@ -1,7 +1,7 @@
-
 import rclpy
 from rclpy.node import Node
-from geometry_interfaces.msg import MatchArray
+from surveillance_interfaces.msg import MatchArray
+
 
 class MatchFilteringNode(Node):
 
@@ -15,68 +15,77 @@ class MatchFilteringNode(Node):
             MatchArray, '/raw_matches', self.match_callback, 10
         )
         self.publisher_ = self.create_publisher(MatchArray, '/filtered_matches', 10)
+
         self.get_logger().info(
             f'MatchFilteringNode started | ratio_threshold={self.ratio_thresh}'
         )
 
     def match_callback(self, msg: MatchArray):
+
         if msg.count == 0:
             self.get_logger().warn('Received empty match list.')
             self._publish_empty(msg)
             return
 
-        # -----------------------------------------------------------------------
-        # Stage 1: Ratio Test
-        # The raw_matches distances list already contains all matches that passed
-        # the initial distance threshold in Node 4.
-        # We simulate the ratio test by sorting and comparing adjacent distances.
-        # In practice the BFMatcher knn output (m, n) gives us:
-        #   m.distance / n.distance < ratio  -> keep m
-        # Since the MatchArray flattened those pairs, we use distance alone here
-        # and apply a normalised self-consistency check.
-        # -----------------------------------------------------------------------
+        # Ensure we have both m and n distances
+        if not hasattr(msg, 'm_distances') or not hasattr(msg, 'n_distances'):
+            self.get_logger().error('MatchArray missing m_distances / n_distances → cannot apply ratio test!')
+            return
+      
         good_indices = []
-        distances    = msg.distances
 
-        # Sort matches by distance and keep only the top 70% (ratio approximation)
-        # This is a valid simplified ratio test when only one distance is stored.
-        if len(distances) > 1:
-            threshold_dist = sorted(distances)[int(len(distances) * self.ratio_thresh)]
-            good_indices   = [i for i, d in enumerate(distances) if d <= threshold_dist]
-        else:
-            good_indices = list(range(len(distances)))
+        # keep match if: m.distance / n.distance < threshold
+        for i in range(msg.count):
+            m_dist = msg.m_distances[i]
+            n_dist = msg.n_distances[i]
 
-        # -----------------------------------------------------------------------
-        # Stage 2: Cross-Check Simulation
-        # We enforce that query point and train point have a unique mapping.
-        # Remove duplicates where the same train point appears multiple times.
-        # -----------------------------------------------------------------------
+            if n_dist == 0:
+                continue  # avoid division by zero
+
+            ratio = m_dist / n_dist
+
+            if ratio < self.ratio_thresh:
+                good_indices.append(i)
+
+        if len(good_indices) == 0:
+            self.get_logger().warn('All matches rejected by ratio test.')
+            self._publish_empty(msg)
+            return
+        
+        #  Cross-Check (one-to-one mapping)
+        # Ensure each train keypoint appears only once
         seen_train = set()
         filtered_indices = []
+
         for i in good_indices:
             train_key = (round(msg.train_x[i], 1), round(msg.train_y[i], 1))
+
             if train_key not in seen_train:
                 seen_train.add(train_key)
                 filtered_indices.append(i)
+        # Build filtered message
+        
+        filtered_msg = MatchArray()
+        filtered_msg.header = msg.header
+        filtered_msg.query_x = [msg.query_x[i] for i in filtered_indices]
+        filtered_msg.query_y = [msg.query_y[i] for i in filtered_indices]
+        filtered_msg.train_x = [msg.train_x[i] for i in filtered_indices]
+        filtered_msg.train_y = [msg.train_y[i] for i in filtered_indices]
 
-        filtered_msg          = MatchArray()
-        filtered_msg.header   = msg.header
-        filtered_msg.query_x  = [msg.query_x[i]   for i in filtered_indices]
-        filtered_msg.query_y  = [msg.query_y[i]   for i in filtered_indices]
-        filtered_msg.train_x  = [msg.train_x[i]   for i in filtered_indices]
-        filtered_msg.train_y  = [msg.train_y[i]   for i in filtered_indices]
-        filtered_msg.distances= [msg.distances[i]  for i in filtered_indices]
-        filtered_msg.count    = len(filtered_indices)
+        # Keep ONLY m distances as final match score
+        filtered_msg.distances = [msg.m_distances[i] for i in filtered_indices]
+        filtered_msg.count = len(filtered_indices)
 
         self.publisher_.publish(filtered_msg)
-        self.get_logger().debug(
-            f'Filtering: {msg.count} raw -> {filtered_msg.count} filtered'
+
+        self.get_logger().info(
+            f'Filtering: {msg.count} raw → {filtered_msg.count} filtered'
         )
 
     def _publish_empty(self, original_msg):
-        empty            = MatchArray()
-        empty.header     = original_msg.header
-        empty.count      = 0
+        empty = MatchArray()
+        empty.header = original_msg.header
+        empty.count = 0
         self.publisher_.publish(empty)
 
 
