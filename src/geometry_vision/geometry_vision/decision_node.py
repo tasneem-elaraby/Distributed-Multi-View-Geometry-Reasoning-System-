@@ -1,4 +1,6 @@
 
+<<<<<<< HEAD
+=======
 import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionServer, CancelResponse, GoalResponse
@@ -145,3 +147,4 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
+>>>>>>> 6a027aa (just renamed)
