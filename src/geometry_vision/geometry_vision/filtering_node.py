@@ -26,6 +26,7 @@ class MatchFilteringNode(Node):
             self._publish_empty(msg)
             return
 
+       
         raw = msg.distances
 
         # Guard: if distances are NOT interleaved (legacy / unexpected format),
@@ -43,6 +44,7 @@ class MatchFilteringNode(Node):
             d2_list = None
             use_true_ratio = False
 
+        
         if use_true_ratio:
             good_indices = []
             for i, (d1, d2) in enumerate(zip(d1_list, d2_list)):
@@ -64,6 +66,8 @@ class MatchFilteringNode(Node):
             self._publish_empty(msg)
             return
 
+       
+        # Build a dict: train_key → (index, d1) keeping the best one
         best_for_train = {}
         for i in good_indices:
             train_key = (round(msg.train_x[i], 1), round(msg.train_y[i], 1))
@@ -83,7 +87,7 @@ class MatchFilteringNode(Node):
 
         filtered_indices = [v[0] for v in best_for_query.values()]
 
-    
+      
         filtered_msg           = MatchArray()
         filtered_msg.header    = msg.header
         filtered_msg.query_x   = [msg.query_x[i]  for i in filtered_indices]
@@ -95,8 +99,7 @@ class MatchFilteringNode(Node):
 
         self.publisher_.publish(filtered_msg)
         self.get_logger().info(
-            f'Filtering: {msg.count} raw -> {filtered_msg.count} filtered '
-            f'(ratio_thresh={self.ratio_thresh})'
+            f'[{msg.count} raw matches] filtered to [{filtered_msg.count}]'
         )
 
 
