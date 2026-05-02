@@ -1,4 +1,3 @@
-
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
@@ -7,20 +6,35 @@ import cv2
 import numpy as np
 from geometry_interfaces.msg import KeypointArray, DescriptorArray
 
+
 class DescriptorExtractionNode(Node):
 
     def __init__(self):
         super().__init__('descriptor_extraction_node')
 
         self.declare_parameter('descriptor_type', 'ORB')
-        desc_type = self.get_parameter('descriptor_type').value
+        desc_type = self.get_parameter('descriptor_type').value.upper()
 
-        # ORB can both detect and compute
-        self.extractor = cv2.ORB_create()
-        self.bridge    = CvBridge()
+       
+        if desc_type == 'SIFT':
+            self.extractor = cv2.SIFT_create()
+            self.norm_type = cv2.NORM_L2
+        elif desc_type == 'BRISK':
+            self.extractor = cv2.BRISK_create()
+            self.norm_type = cv2.NORM_HAMMING
+        else:
+            if desc_type != 'ORB':
+                self.get_logger().warn(
+                    f"Unknown descriptor_type '{desc_type}'. Falling back to ORB."
+                )
+            desc_type      = 'ORB'
+            self.extractor = cv2.ORB_create()
+            self.norm_type = cv2.NORM_HAMMING
+
+        self.bridge = CvBridge()
 
         # Cache for the latest frame and keypoint message
-        self.latest_frame    = None
+        self.latest_frame     = None
         self.latest_keypoints = None
 
         self.sub_image = self.create_subscription(
@@ -30,7 +44,9 @@ class DescriptorExtractionNode(Node):
             KeypointArray, '/keypoints', self.keypoint_callback, 10
         )
         self.publisher_ = self.create_publisher(DescriptorArray, '/descriptors', 10)
-        self.get_logger().info(f'DescriptorExtractionNode started | type={desc_type}')
+        self.get_logger().info(
+            f'DescriptorExtractionNode started | type={desc_type}'
+        )
 
     def image_callback(self, msg: Image):
         self.latest_frame = msg
@@ -65,22 +81,26 @@ class DescriptorExtractionNode(Node):
             self.get_logger().warn('Descriptor computation returned empty result.')
             return
 
-        # Flatten the descriptor matrix (N x 32) into a 1D list for the message
-        desc_msg                  = DescriptorArray()
-        desc_msg.header           = self.latest_keypoints.header
-        desc_msg.data             = descriptors.flatten().tolist()
-        desc_msg.num_descriptors  = int(descriptors.shape[0])
-        desc_msg.descriptor_size  = int(descriptors.shape[1])
-        desc_msg.kp_x             = [kp.pt[0] for kp in keypoints]
-        desc_msg.kp_y             = [kp.pt[1] for kp in keypoints]
+        descriptors_uint8 = np.clip(descriptors, 0, 255).astype(np.uint8)
+
+        # Flatten the descriptor matrix (N x D) into a 1D list for the message
+        desc_msg                 = DescriptorArray()
+        desc_msg.header          = self.latest_keypoints.header
+        desc_msg.data            = descriptors_uint8.flatten().tolist()
+        desc_msg.num_descriptors = int(descriptors_uint8.shape[0])
+        desc_msg.descriptor_size = int(descriptors_uint8.shape[1])
+        desc_msg.kp_x            = [kp.pt[0] for kp in keypoints]
+        desc_msg.kp_y            = [kp.pt[1] for kp in keypoints]
 
         self.publisher_.publish(desc_msg)
-        self.get_logger().debug(f'Published {desc_msg.num_descriptors} descriptors')
+        self.get_logger().debug(
+            f'Published {desc_msg.num_descriptors} descriptors '
+            f'(size={desc_msg.descriptor_size})'
+        )
 
         # Reset cache so we don't reprocess the same pair
         self.latest_frame     = None
         self.latest_keypoints = None
-
 
 def main(args=None):
     rclpy.init(args=args)
