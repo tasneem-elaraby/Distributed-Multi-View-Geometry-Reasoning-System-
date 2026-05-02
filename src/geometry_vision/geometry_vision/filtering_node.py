@@ -19,53 +19,86 @@ class MatchFilteringNode(Node):
             f'MatchFilteringNode started | ratio_threshold={self.ratio_thresh}'
         )
 
+
     def match_callback(self, msg: MatchArray):
         if msg.count == 0:
             self.get_logger().warn('Received empty match list.')
             self._publish_empty(msg)
             return
 
-        distances = msg.distances
+        raw = msg.distances
 
-        if len(distances) == 0:
-            self._publish_empty(msg)
-            return
+        # Guard: if distances are NOT interleaved (legacy / unexpected format),
+        # fall back to the old percentile approach so the node stays robust.
+        if len(raw) == msg.count * 2:
+            d1_list = raw[0::2]   # best distances
+            d2_list = raw[1::2]   # second-best distances
+            use_true_ratio = True
+        else:
+            self.get_logger().warn(
+                'distances field length does not match expected interleaved format. '
+                'Falling back to percentile-based filtering.'
+            )
+            d1_list = raw
+            d2_list = None
+            use_true_ratio = False
 
-        # Approximate Ratio Test (since we only have one distance)
-        # Keep strongest matches based on threshold percentile
-        sorted_dist  = sorted(distances)
-        cutoff_index = int(len(sorted_dist) * self.ratio_thresh)
-        cutoff_value = sorted_dist[cutoff_index]
-        good_indices = [i for i, d in enumerate(distances) if d <= cutoff_value]
+        if use_true_ratio:
+            good_indices = []
+            for i, (d1, d2) in enumerate(zip(d1_list, d2_list)):
+                if d2 == 0.0:
+                    # Avoid division by zero; keep only if d1 is also zero (perfect match)
+                    if d1 == 0.0:
+                        good_indices.append(i)
+                    continue
+                if d1 / d2 < self.ratio_thresh:
+                    good_indices.append(i)
+        else:
+            # Fallback: keep the best ratio_thresh fraction by distance
+            sorted_dist  = sorted(enumerate(d1_list), key=lambda x: x[1])
+            cutoff       = max(1, int(len(sorted_dist) * self.ratio_thresh))
+            good_indices = [idx for idx, _ in sorted_dist[:cutoff]]
 
         if len(good_indices) == 0:
-            self.get_logger().warn('All matches rejected.')
+            self.get_logger().warn('All matches rejected by ratio test.')
             self._publish_empty(msg)
             return
 
-        # Cross-Check (unique train points)
-        seen_train       = set()
-        filtered_indices = []
+        best_for_train = {}
         for i in good_indices:
             train_key = (round(msg.train_x[i], 1), round(msg.train_y[i], 1))
-            if train_key not in seen_train:
-                seen_train.add(train_key)
-                filtered_indices.append(i)
+            d1 = d1_list[i]
+            if train_key not in best_for_train or d1 < best_for_train[train_key][1]:
+                best_for_train[train_key] = (i, d1)
 
-        # Build filtered message
+        filtered_indices = [v[0] for v in best_for_train.values()]
+
+        # Also enforce uniqueness of query (previous-frame) points
+        best_for_query = {}
+        for i in filtered_indices:
+            query_key = (round(msg.query_x[i], 1), round(msg.query_y[i], 1))
+            d1 = d1_list[i]
+            if query_key not in best_for_query or d1 < best_for_query[query_key][1]:
+                best_for_query[query_key] = (i, d1)
+
+        filtered_indices = [v[0] for v in best_for_query.values()]
+
+    
         filtered_msg           = MatchArray()
         filtered_msg.header    = msg.header
-        filtered_msg.query_x   = [msg.query_x[i]   for i in filtered_indices]
-        filtered_msg.query_y   = [msg.query_y[i]   for i in filtered_indices]
-        filtered_msg.train_x   = [msg.train_x[i]   for i in filtered_indices]
-        filtered_msg.train_y   = [msg.train_y[i]   for i in filtered_indices]
-        filtered_msg.distances = [msg.distances[i]  for i in filtered_indices]
+        filtered_msg.query_x   = [msg.query_x[i]  for i in filtered_indices]
+        filtered_msg.query_y   = [msg.query_y[i]  for i in filtered_indices]
+        filtered_msg.train_x   = [msg.train_x[i]  for i in filtered_indices]
+        filtered_msg.train_y   = [msg.train_y[i]  for i in filtered_indices]
+        filtered_msg.distances = [float(d1_list[i]) for i in filtered_indices]
         filtered_msg.count     = len(filtered_indices)
 
         self.publisher_.publish(filtered_msg)
         self.get_logger().info(
-            f'Filtering: {msg.count} raw -> {filtered_msg.count} filtered'
+            f'Filtering: {msg.count} raw -> {filtered_msg.count} filtered '
+            f'(ratio_thresh={self.ratio_thresh})'
         )
+
 
     def _publish_empty(self, original_msg):
         empty        = MatchArray()
