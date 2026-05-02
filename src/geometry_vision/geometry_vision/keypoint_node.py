@@ -35,12 +35,10 @@ class KeypointDetectionNode(Node):
                 f'Low keypoints detected: {len(keypoints)} (minimum required: 20)'
             )
 
-        # -------------------------------------------------------
         # VISUALIZATION: draw keypoints on the frame
-        # -------------------------------------------------------
         vis = cv2.drawKeypoints(
             frame, keypoints, None,
-            color=(0, 255, 0),                          # green dots
+            color=(0, 255, 0),                          
             flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS
         )
         cv2.putText(
